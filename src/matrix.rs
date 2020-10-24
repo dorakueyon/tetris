@@ -1,6 +1,10 @@
+use crate::Position;
+use crate::Size;
+
 const VERTICAL_LINE: char = '|';
 const HORIZONTAL_LINE: char = '-';
 const ON_DOT: char = '■';
+const CURRENT_TERMINO_DOT: char = '❏';
 const OFF_DOT: char = ' ';
 
 pub struct Matrix {
@@ -20,8 +24,30 @@ impl Matrix {
         Self { bufs }
     }
 
-    pub fn draw(&mut self, x: usize, y: usize) {
-        self.bufs[y][x] = ON_DOT;
+    fn is_inside_field(position: &Position, size: &Size) -> bool {
+        let Position { x, y } = position;
+        let Size { height, width } = size;
+        0 <= *x && *x <= *width - 1 && 0 <= *y && *y <= *height - 1
+    }
+
+    pub fn draw(&mut self, position: Position) {
+        let Position { x, y } = position;
+        self.bufs[y][x] = CURRENT_TERMINO_DOT;
+    }
+
+    pub fn is_buf_movable(&self, position: &Position, size: &Size) -> bool {
+        !self.is_buf_on(position) && Matrix::is_inside_field(position, size)
+    }
+
+    fn is_buf_on(&self, position: &Position) -> bool {
+        let Position { x, y } = position;
+        if let Some(row) = self.bufs.get(*y) {
+            if let Some(buf) = row.get(*x) {
+                return *buf == ON_DOT;
+            }
+        };
+
+        false
     }
 
     pub fn render(&self, index: usize) -> Option<String> {

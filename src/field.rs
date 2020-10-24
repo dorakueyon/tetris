@@ -34,6 +34,7 @@ impl Size {
     }
 }
 
+#[derive(Debug)]
 pub struct Field {
     size: Size,
     pub matrix: Matrix,
@@ -49,6 +50,10 @@ impl Field {
         }
     }
 
+    pub fn size(&self) -> &Size {
+        &self.size
+    }
+
     fn refresh_matrix(&mut self) {
         if let Some(current_tetrimino) = &self.current_tetrimino {
             let tetrimino_areas = current_tetrimino.areas();
@@ -58,14 +63,14 @@ impl Field {
         }
     }
 
-    fn insert_tetrimino(&mut self, tetrimino: Tetrmino) {
+    pub fn insert_tetrimino(&mut self, tetrimino: Tetrmino) {
         self.current_tetrimino = Some(CurrentTetrimino::default(tetrimino, self.size.width));
         self.refresh_matrix()
     }
 
-    fn current_tetrimino_move(&mut self, movement: Movement) {
-        //if let Some(ref mut current_tetrimino) = self.current_tetrimino {
+    pub fn current_tetrimino_move(&mut self, movement: Movement) {
         if let Some(current_tetrimino) = self.current_tetrimino.as_mut() {
+            dbg!(&current_tetrimino);
             match &movement {
                 Movement::Down | Movement::Left | Movement::Right => {
                     let mut movable = true;
@@ -76,12 +81,39 @@ impl Field {
                         }
                     }
                     if movable {
+                        let areas = current_tetrimino.areas();
+                        self.matrix.change_bufs_to_off(areas);
+
                         current_tetrimino.movement(&movement);
+
+                        let areas = current_tetrimino.areas();
+                        self.matrix.change_bufs_to_current_tetrimino_dot(areas);
                     }
                     return;
                 }
             }
         };
+    }
+
+    fn is_current_tetrimino_movement_completable(&self) -> bool {
+        true
+    }
+
+    fn complete_current_tetrimino_movement(&mut self) -> Result<(), String> {
+        if !self.is_current_tetrimino_movement_completable() {
+            return Err(String::from(
+                "current tetrimino movement cannot be completed",
+            ));
+        };
+        match &self.current_tetrimino {
+            None => return Err(String::from("current tetrimino does not existed")),
+            Some(current_tetrimiono) => {
+                let areas = current_tetrimiono.areas();
+                self.matrix.change_bufs_to_on(areas);
+            }
+        };
+        self.current_tetrimino = None;
+        Ok(())
     }
 }
 
@@ -92,7 +124,7 @@ mod test {
     fn test_insert_I() {
         let mut field = Field::default();
         field.insert_tetrimino(Tetrmino::I);
-        let mut current_tetrimino = match &field.current_tetrimino {
+        let current_tetrimino = match &field.current_tetrimino {
             None => panic!(),
             Some(c) => c,
         };
@@ -122,14 +154,9 @@ mod test {
             "          ",
             "          ",
         ];
-        {
-            for i in 0..field.size.height {
-                if let Some(row) = field.matrix.render(i as usize) {
-                    assert_eq!(row, expected[i as usize])
-                }
-            }
-        }
+        test_matrix_render(expected, &field);
     }
+
     #[test]
     fn test_tetrimino_move_down() {
         let mut field = Field::default();
@@ -141,6 +168,29 @@ mod test {
             &Position { x: 4, y: 1 }
         );
 
+        let expected = vec![
+            "          ",
+            "    ❏     ",
+            "    ❏     ",
+            "    ❏     ",
+            "    ❏     ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ];
+        test_matrix_render(expected, &field);
         let tetrimino_height = 4;
         let limit = field.size.height - tetrimino_height - 1;
         for _ in 0..limit {
@@ -187,5 +237,58 @@ mod test {
             field.current_tetrimino.as_ref().unwrap().position(),
             &Position { x: limit - 1, y: 0 }
         );
+    }
+
+    #[test]
+    fn test_tetrimino_complete_movement() {
+        let mut field = Field::default();
+        field.insert_tetrimino(Tetrmino::I);
+        field.current_tetrimino_move(Movement::Down);
+
+        let tetrimino_height = 4;
+        let limit = field.size.height - tetrimino_height - 1;
+        for _ in 0..limit {
+            println!("===========");
+            field.current_tetrimino_move(Movement::Down);
+        }
+        field.complete_current_tetrimino_movement().unwrap();
+
+        assert!(field.current_tetrimino.is_none());
+
+        let expected = vec![
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "    ■     ",
+            "    ■     ",
+            "    ■     ",
+            "    ■     ",
+        ];
+        test_matrix_render(expected, &field)
+    }
+
+    fn test_matrix_render(expected: Vec<&str>, field: &Field) {
+        assert_eq!(expected.len(), field.size.height);
+        for i in 0..field.size.height {
+            if let Some(row) = field.matrix.render(i as usize) {
+                assert_eq!(
+                    format!("{}:{}", i, row),
+                    format!("{}:{}", i, expected[i as usize])
+                )
+            }
+        }
     }
 }

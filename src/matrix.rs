@@ -4,12 +4,11 @@ use crate::Size;
 
 use std::convert::From;
 
-const VERTICAL_LINE: char = '|';
-const HORIZONTAL_LINE: char = '-';
 const ON_DOT: char = '■';
 const CURRENT_TERMINO_DOT: char = '❏';
 const OFF_DOT: char = ' ';
 
+#[derive(Debug)]
 pub struct Matrix {
     bufs: Vec<Vec<char>>,
 }
@@ -59,6 +58,27 @@ impl Matrix {
         match self.bufs.get(index) {
             Some(chars) => Some(chars.iter().collect()),
             None => None,
+        }
+    }
+
+    pub fn change_bufs_to_on(&mut self, areas: Vec<Position>) {
+        for position in areas {
+            let Position { x, y } = position;
+            self.bufs[y][x] = ON_DOT;
+        }
+    }
+
+    pub fn change_bufs_to_off(&mut self, areas: Vec<Position>) {
+        for position in areas {
+            let Position { x, y } = position;
+            self.bufs[y][x] = OFF_DOT;
+        }
+    }
+
+    pub fn change_bufs_to_current_tetrimino_dot(&mut self, areas: Vec<Position>) {
+        for position in areas {
+            let Position { x, y } = position;
+            self.bufs[y][x] = CURRENT_TERMINO_DOT;
         }
     }
 }

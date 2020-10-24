@@ -122,5 +122,6 @@ impl CurrentTetrimino {
             Movement::Left => self.position.x = self.position.x - 1,
             Movement::Right => self.position.x = self.position.x + 1,
         }
+        dbg!(self);
     }
 }

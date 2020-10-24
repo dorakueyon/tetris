@@ -1,5 +1,8 @@
 use crate::Movement;
+use crate::PeekPosition;
 use crate::Position;
+
+use std::convert::From;
 
 #[derive(Debug, PartialEq)]
 pub enum Tetrmino {
@@ -68,18 +71,19 @@ impl CurrentTetrimino {
         row_areas
     }
 
-    pub fn edge_positions(&self, position: Position) -> Vec<Position> {
-        let Position { x, y } = position;
+    pub fn edge_positions(&self, position: PeekPosition) -> Vec<PeekPosition> {
+        let PeekPosition { x, y } = position;
+
         let mut edge_positions = vec![];
 
         match self.tetrimino {
             Tetrmino::I => {
-                let mut down_edges = vec![Position { x: x, y: y + 3 }];
+                let mut down_edges = vec![PeekPosition { x: x, y: y + 3 }];
                 let mut side_edges = vec![
-                    Position { x: x, y: y },
-                    Position { x: x, y: y + 1 },
-                    Position { x: x, y: y + 2 },
-                    Position { x: x, y: y + 3 },
+                    PeekPosition { x: x, y: y },
+                    PeekPosition { x: x, y: y + 1 },
+                    PeekPosition { x: x, y: y + 2 },
+                    PeekPosition { x: x, y: y + 3 },
                 ];
                 edge_positions.append(&mut down_edges);
                 edge_positions.append(&mut side_edges);
@@ -89,28 +93,34 @@ impl CurrentTetrimino {
         edge_positions
     }
 
-    pub fn peek_edge_positions(&self, movement: &Movement) -> Vec<Position> {
+    pub fn peek_edge_positions(&self, movement: &Movement) -> Vec<PeekPosition> {
         let peek_position = self.peek_position(&movement);
         let edge_positions = self.edge_positions(peek_position);
 
         edge_positions
     }
 
-    fn peek_position(&self, movement: &Movement) -> Position {
-        let (diff_x, diff_y) = match movement {
-            Movement::Down => (0, 1),
+    fn peek_position(&self, movement: &Movement) -> PeekPosition {
+        let diff_peek_position = match movement {
+            Movement::Down => PeekPosition { x: 0, y: 1 },
+            Movement::Left => PeekPosition { x: -1, y: 0 },
+            Movement::Right => PeekPosition { x: 1, y: 0 },
         };
         let Position { x, y } = self.position();
+        let current_x = i16::from(*x as u8);
+        let current_y = i16::from(*y as u8);
 
-        Position {
-            x: x + diff_x,
-            y: y + diff_y,
+        PeekPosition {
+            x: current_x + diff_peek_position.x,
+            y: current_y + diff_peek_position.y,
         }
     }
 
     pub fn movement(&mut self, movement: &Movement) {
         match movement {
             Movement::Down => self.position.y = self.position.y + 1,
+            Movement::Left => self.position.x = self.position.x - 1,
+            Movement::Right => self.position.x = self.position.x + 1,
         }
     }
 }

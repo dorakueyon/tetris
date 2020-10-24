@@ -10,9 +10,16 @@ pub struct Position {
     pub x: usize,
     pub y: usize,
 }
+#[derive(Debug, PartialEq)]
+pub struct PeekPosition {
+    pub x: i16,
+    pub y: i16,
+}
 
 pub enum Movement {
     Down,
+    Left,
+    Right,
 }
 
 #[derive(Debug, PartialEq)]
@@ -60,10 +67,9 @@ impl Field {
         //if let Some(ref mut current_tetrimino) = self.current_tetrimino {
         if let Some(current_tetrimino) = self.current_tetrimino.as_mut() {
             match &movement {
-                Movement::Down => {
+                Movement::Down | Movement::Left | Movement::Right => {
                     let mut movable = true;
-                    let peek_edge_positions =
-                        current_tetrimino.peek_edge_positions(&Movement::Down);
+                    let peek_edge_positions = current_tetrimino.peek_edge_positions(&movement);
                     for position in peek_edge_positions {
                         if !self.matrix.is_buf_movable(&position, &self.size) {
                             movable = false
@@ -125,7 +131,7 @@ mod test {
         }
     }
     #[test]
-    fn test_tetrimino_move() {
+    fn test_tetrimino_move_down() {
         let mut field = Field::default();
         field.insert_tetrimino(Tetrmino::I);
         field.current_tetrimino_move(Movement::Down);
@@ -147,6 +153,39 @@ mod test {
                 x: 4,
                 y: field.size.height - tetrimino_height
             }
+        );
+    }
+
+    #[test]
+    fn test_tetrimino_move_left_and_right() {
+        let mut field = Field::default();
+        field.insert_tetrimino(Tetrmino::I);
+        field.current_tetrimino_move(Movement::Left);
+
+        assert_eq!(
+            field.current_tetrimino.as_ref().unwrap().position(),
+            &Position { x: 3, y: 0 }
+        );
+
+        let tetrimino_width = 1;
+        let mut limit = field.size.width - tetrimino_width - 1;
+        for _ in 0..limit {
+            field.current_tetrimino_move(Movement::Left);
+        }
+        field.current_tetrimino_move(Movement::Left);
+        assert_eq!(
+            field.current_tetrimino.as_ref().unwrap().position(),
+            &Position { x: 0, y: 0 }
+        );
+
+        limit = field.size.width;
+        for _ in 0..limit {
+            field.current_tetrimino_move(Movement::Right);
+        }
+        field.current_tetrimino_move(Movement::Right);
+        assert_eq!(
+            field.current_tetrimino.as_ref().unwrap().position(),
+            &Position { x: limit - 1, y: 0 }
         );
     }
 }

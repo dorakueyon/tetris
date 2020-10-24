@@ -4,7 +4,7 @@ mod terminal;
 mod tetrimino;
 mod tetris;
 
-pub use field::{Field, Movement, Position, Size};
+pub use field::{Field, Movement, PeekPosition, Position, Size};
 pub use matrix::Matrix;
 pub use terminal::Terminal;
 pub use tetrimino::{CurrentTetrimino, Tetrmino};

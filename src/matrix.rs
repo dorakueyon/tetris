@@ -1,5 +1,8 @@
+use crate::PeekPosition;
 use crate::Position;
 use crate::Size;
+
+use std::convert::From;
 
 const VERTICAL_LINE: char = '|';
 const HORIZONTAL_LINE: char = '-';
@@ -24,10 +27,12 @@ impl Matrix {
         Self { bufs }
     }
 
-    fn is_inside_field(position: &Position, size: &Size) -> bool {
-        let Position { x, y } = position;
+    fn is_inside_field(position: &PeekPosition, size: &Size) -> bool {
+        let PeekPosition { x, y } = position;
         let Size { height, width } = size;
-        0 <= *x && *x <= *width - 1 && 0 <= *y && *y <= *height - 1
+        let height = i16::from(*height as u8);
+        let width = i16::from(*width as u8);
+        0 <= *x && *x <= width - 1 && 0 <= *y && *y <= height - 1
     }
 
     pub fn draw(&mut self, position: Position) {
@@ -35,14 +40,14 @@ impl Matrix {
         self.bufs[y][x] = CURRENT_TERMINO_DOT;
     }
 
-    pub fn is_buf_movable(&self, position: &Position, size: &Size) -> bool {
+    pub fn is_buf_movable(&self, position: &PeekPosition, size: &Size) -> bool {
         !self.is_buf_on(position) && Matrix::is_inside_field(position, size)
     }
 
-    fn is_buf_on(&self, position: &Position) -> bool {
-        let Position { x, y } = position;
-        if let Some(row) = self.bufs.get(*y) {
-            if let Some(buf) = row.get(*x) {
+    fn is_buf_on(&self, position: &PeekPosition) -> bool {
+        let PeekPosition { x, y } = position;
+        if let Some(row) = self.bufs.get(*y as usize) {
+            if let Some(buf) = row.get(*x as usize) {
                 return *buf == ON_DOT;
             }
         };
